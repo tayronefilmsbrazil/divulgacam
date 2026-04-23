@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #E84C22;
+  --brand-dark: #1A2740;
+  --brand-light: #F5F5F5;
+}
+
+html,
+body {
+  background-color: var(--brand-light);
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
