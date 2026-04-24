@@ -94,6 +94,28 @@ export function CampaignSettingsForm({ campaign }: Props) {
         </div>
       </div>
 
+      {/* Logo da marca */}
+      <div>
+        <label
+          htmlFor="logo_url"
+          className="mb-1 block text-sm font-semibold text-brand-dark"
+        >
+          Logo da marca (URL)
+        </label>
+        <input
+          id="logo_url"
+          type="url"
+          name="logo_url"
+          maxLength={500}
+          defaultValue={campaign.logo_url ?? ''}
+          placeholder="https://seudominio.com.br/logo.png"
+          className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Aparece no cabeçalho dos e-mails disparados. Use uma imagem PNG ou JPG hospedada publicamente.
+        </p>
+      </div>
+
       {/* Webhook n8n */}
       <div>
         <label

@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { requireManagerSession } from '@/lib/painel/session';
 import { LeadsFilter } from '@/components/painel/LeadsFilter';
 import { Pagination } from '@/components/painel/Pagination';
+import { DeleteLeadForm } from '@/components/painel/DeleteLeadForm';
 import type { Lead, ParticipationType } from '@/lib/supabase/types';
 
 export const metadata: Metadata = {
@@ -127,6 +128,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                   <th className="px-4 py-3">E-mail</th>
                   <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3 whitespace-nowrap">Data</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -160,6 +162,9 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                     </td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {formatDate(lead.created_at)}
+                    </td>
+                    <td className="px-2 py-3">
+                      <DeleteLeadForm leadId={lead.id} leadName={lead.name} />
                     </td>
                   </tr>
                 ))}

@@ -40,6 +40,8 @@ function interpolate(
 function buildEmailHtml(opts: {
   campaignName: string;
   candidateName: string | null;
+  logoUrl: string | null;
+  primaryColor: string;
   message: string;
   materialUrl: string | null;
 }): string {
@@ -49,30 +51,43 @@ function buildEmailHtml(opts: {
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>');
 
+  const brandName = opts.candidateName ?? opts.campaignName;
+  const color = opts.primaryColor || '#E84C22';
+
+  const logoBlock = opts.logoUrl
+    ? `<img src="${opts.logoUrl}" alt="${brandName}" style="max-height:60px;max-width:200px;object-fit:contain">`
+    : `<span style="font-size:20px;font-weight:bold;color:#ffffff">${brandName}</span>`;
+
   const materialBlock = opts.materialUrl
     ? `<div style="margin-top:24px;text-align:center">
         <a href="${opts.materialUrl}"
-           download
-           style="display:inline-block;background-color:#E84C22;color:#ffffff;font-weight:bold;
+           style="display:inline-block;background-color:${color};color:#ffffff;font-weight:bold;
                   font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;
                   font-family:Arial,sans-serif">
-          ⬇️ Baixar material da campanha
+          Clique aqui para visualizar
         </a>
-        <p style="margin-top:8px;font-size:11px;color:#999">
-          Ou acesse: <a href="${opts.materialUrl}" style="color:#E84C22">${opts.materialUrl}</a>
-        </p>
        </div>`
     : '';
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
-<body style="font-family:Arial,sans-serif;color:#1a1a1a;max-width:600px;margin:0 auto;padding:24px">
-  <p>${safeMsg}</p>
-  ${materialBlock}
-  <hr style="margin:24px 0;border:none;border-top:1px solid #eee">
-  <p style="font-size:12px;color:#999">
-    Mensagem enviada pela campanha <strong>${opts.campaignName}</strong>.
-  </p>
+<body style="font-family:Arial,sans-serif;color:#1a1a1a;max-width:600px;margin:0 auto;padding:0">
+
+  <!-- Cabeçalho da marca -->
+  <div style="background-color:${color};padding:20px 32px;border-radius:8px 8px 0 0;text-align:center">
+    ${logoBlock}
+  </div>
+
+  <!-- Corpo -->
+  <div style="padding:32px;background:#ffffff;border:1px solid #eee;border-top:none;border-radius:0 0 8px 8px">
+    <p style="margin:0 0 16px;line-height:1.6">${safeMsg}</p>
+    ${materialBlock}
+    <hr style="margin:28px 0;border:none;border-top:1px solid #eee">
+    <p style="font-size:12px;color:#999;margin:0">
+      Mensagem enviada pela campanha <strong>${opts.campaignName}</strong>.
+    </p>
+  </div>
+
 </body>
 </html>`;
 }
@@ -189,6 +204,8 @@ export async function createBlast(
           html: buildEmailHtml({
             campaignName: campaign.name,
             candidateName: campaign.candidate_name,
+            logoUrl: campaign.logo_url,
+            primaryColor: campaign.primary_color,
             message: personalMsg,
             materialUrl,
           }),

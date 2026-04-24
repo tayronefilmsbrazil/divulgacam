@@ -29,6 +29,8 @@ export async function updateCampaign(
     (formData.get('whatsapp_instance') as string | null)?.trim() || null;
   const emailFrom =
     (formData.get('email_from') as string | null)?.trim() || null;
+  const logoUrl =
+    (formData.get('logo_url') as string | null)?.trim() || null;
 
   if (!name || name.length < 2) {
     return {
@@ -45,6 +47,7 @@ export async function updateCampaign(
     name,
     candidate_name: candidateName,
     primary_color: primaryColor,
+    logo_url: logoUrl,
     n8n_webhook_url: n8nWebhookUrl,
     whatsapp_instance: whatsappInstance,
     email_from: emailFrom,
