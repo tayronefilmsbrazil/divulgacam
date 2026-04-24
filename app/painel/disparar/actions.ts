@@ -50,11 +50,18 @@ function buildEmailHtml(opts: {
     .replace(/\n/g, '<br>');
 
   const materialBlock = opts.materialUrl
-    ? `<p style="margin-top:16px">
-        <a href="${opts.materialUrl}" style="color:#E84C22;font-weight:bold">
-          📎 Ver material da campanha
+    ? `<div style="margin-top:24px;text-align:center">
+        <a href="${opts.materialUrl}"
+           download
+           style="display:inline-block;background-color:#E84C22;color:#ffffff;font-weight:bold;
+                  font-size:15px;padding:14px 32px;border-radius:8px;text-decoration:none;
+                  font-family:Arial,sans-serif">
+          ⬇️ Baixar material da campanha
         </a>
-       </p>`
+        <p style="margin-top:8px;font-size:11px;color:#999">
+          Ou acesse: <a href="${opts.materialUrl}" style="color:#E84C22">${opts.materialUrl}</a>
+        </p>
+       </div>`
     : '';
 
   return `<!DOCTYPE html>
