@@ -237,6 +237,7 @@ export async function createBlast(
             blast_id: blastId,
             campaign_id: campaign.id,
             campaign_slug: campaign.slug,
+            candidate_name: campaign.candidate_name ?? campaign.name,
             whatsapp_instance: campaign.whatsapp_instance,
             message,
             material_url: materialUrl,
