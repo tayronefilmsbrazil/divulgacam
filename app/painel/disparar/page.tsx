@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { requireManagerSession } from '@/lib/painel/session';
+import { Suspense } from 'react';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAuthSession } from '@/lib/painel/session';
+import { getActiveCampaign, getAllCampaigns } from '@/lib/painel/campaign-resolver';
+import { CampaignSelector } from '@/components/painel/CampaignSelector';
 import { BlastForm } from '@/components/painel/BlastForm';
 import type { ParticipationType } from '@/lib/supabase/types';
 
@@ -11,20 +14,35 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function DispararPage() {
-  const { campaign } = await requireManagerSession();
-  const supabase = createSupabaseServerClient();
+interface PageProps {
+  searchParams: { campanha?: string };
+}
 
-  // Conta leads por tipo
+export default async function DispararPage({ searchParams }: PageProps) {
+  const { manager } = await requireAuthSession();
+  const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+
+  const campaign = await getActiveCampaign(manager, searchParams);
+  if (!campaign) {
+    return (
+      <main className="px-6 py-8 sm:px-10">
+        <p className="text-sm text-gray-500">Nenhuma campanha vinculada.</p>
+      </main>
+    );
+  }
+
+  const allCampaigns = isAdmin ? await getAllCampaigns() : [];
+  const admin = supabaseAdmin();
+
   const TYPES: ParticipationType[] = ['apoiador', 'colaborador', 'lideranca'];
 
   const [totalResult, ...typeResults] = await Promise.all([
-    supabase
+    admin
       .from('leads')
       .select('id', { count: 'exact', head: true })
       .eq('campaign_id', campaign.id),
     ...TYPES.map((t) =>
-      supabase
+      admin
         .from('leads')
         .select('id', { count: 'exact', head: true })
         .eq('campaign_id', campaign.id)
@@ -38,8 +56,7 @@ export default async function DispararPage() {
     leadCounts[t] = typeResults[i].count ?? 0;
   });
 
-  // Lista materiais do Storage para o seletor
-  const { data: files } = await supabase.storage
+  const { data: files } = await admin.storage
     .from('materiais')
     .list(campaign.id, { limit: 50, sortBy: { column: 'created_at', order: 'desc' } });
 
@@ -47,7 +64,7 @@ export default async function DispararPage() {
     .filter((f) => f.name !== '.emptyFolderPlaceholder')
     .map((f) => {
       const path = `${campaign.id}/${f.name}`;
-      const { data: { publicUrl } } = supabase.storage.from('materiais').getPublicUrl(path);
+      const { data: { publicUrl } } = admin.storage.from('materiais').getPublicUrl(path);
       return {
         name: f.name.replace(/^\d{10,13}-/, ''),
         publicUrl,
@@ -66,6 +83,12 @@ export default async function DispararPage() {
           <strong>{campaign.name}</strong>.
         </p>
       </header>
+
+      {isAdmin && (
+        <Suspense>
+          <CampaignSelector campaigns={allCampaigns} activeCampaignId={campaign.id} />
+        </Suspense>
+      )}
 
       <div className="max-w-2xl">
         {totalLeads === 0 ? (

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { requireManagerSession } from '@/lib/painel/session';
+import { Suspense } from 'react';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAuthSession } from '@/lib/painel/session';
+import { getActiveCampaign, getAllCampaigns } from '@/lib/painel/campaign-resolver';
+import { CampaignSelector } from '@/components/painel/CampaignSelector';
 import { UploadForm } from '@/components/painel/UploadForm';
 import { DeleteMaterialForm } from '@/components/painel/DeleteMaterialForm';
 
@@ -9,7 +12,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Força renderização dinâmica (cookies de sessão)
 export const dynamic = 'force-dynamic';
 
 function formatSize(bytes: number | undefined): string {
@@ -28,16 +30,31 @@ function fileEmoji(mimeType: string | undefined): string {
   return '📄';
 }
 
-/** Remove prefixo de timestamp gerado no upload (ex: 1714000000000-). */
 function displayName(filename: string): string {
   return filename.replace(/^\d{10,13}-/, '');
 }
 
-export default async function MateriaisPage() {
-  const { campaign } = await requireManagerSession();
-  const supabase = createSupabaseServerClient();
+interface PageProps {
+  searchParams: { campanha?: string };
+}
 
-  const { data: files, error } = await supabase.storage
+export default async function MateriaisPage({ searchParams }: PageProps) {
+  const { manager } = await requireAuthSession();
+  const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+
+  const campaign = await getActiveCampaign(manager, searchParams);
+  if (!campaign) {
+    return (
+      <main className="px-6 py-8 sm:px-10">
+        <p className="text-sm text-gray-500">Nenhuma campanha vinculada.</p>
+      </main>
+    );
+  }
+
+  const allCampaigns = isAdmin ? await getAllCampaigns() : [];
+  const admin = supabaseAdmin();
+
+  const { data: files, error } = await admin.storage
     .from('materiais')
     .list(campaign.id, {
       sortBy: { column: 'created_at', order: 'desc' },
@@ -59,10 +76,14 @@ export default async function MateriaisPage() {
         </p>
       </header>
 
-      {/* Upload */}
+      {isAdmin && (
+        <Suspense>
+          <CampaignSelector campaigns={allCampaigns} activeCampaignId={campaign.id} />
+        </Suspense>
+      )}
+
       <UploadForm />
 
-      {/* Listagem */}
       {error && (
         <p className="mt-6 text-sm text-red-600">
           Erro ao carregar materiais: {error.message}
@@ -84,7 +105,7 @@ export default async function MateriaisPage() {
             const path = `${campaign.id}/${file.name}`;
             const {
               data: { publicUrl },
-            } = supabase.storage.from('materiais').getPublicUrl(path);
+            } = admin.storage.from('materiais').getPublicUrl(path);
 
             const meta = file.metadata as
               | { mimetype?: string; size?: number }
@@ -97,7 +118,6 @@ export default async function MateriaisPage() {
                 key={file.id ?? file.name}
                 className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                {/* Preview */}
                 <div className="flex h-28 items-center justify-center overflow-hidden bg-gray-50">
                   {isImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -111,7 +131,6 @@ export default async function MateriaisPage() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex flex-1 flex-col p-3">
                   <p
                     className="truncate text-xs font-medium text-gray-900"
@@ -125,7 +144,6 @@ export default async function MateriaisPage() {
                     </p>
                   )}
 
-                  {/* Ações */}
                   <div className="mt-2 flex gap-1.5">
                     <a
                       href={publicUrl}
@@ -134,7 +152,7 @@ export default async function MateriaisPage() {
                       rel="noopener noreferrer"
                       className="flex-1 rounded bg-gray-100 px-2 py-1 text-center text-[11px] font-semibold text-gray-600 transition hover:bg-brand-primary hover:text-white"
                     >
-                      ↓ Download
+                      Download
                     </a>
 
                     <DeleteMaterialForm

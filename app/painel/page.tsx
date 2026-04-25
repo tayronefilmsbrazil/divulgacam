@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { Suspense } from 'react';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAuthSession } from '@/lib/painel/session';
-import type { Campaign, ParticipationType } from '@/lib/supabase/types';
+import { getActiveCampaign, getAllCampaigns } from '@/lib/painel/campaign-resolver';
+import { CampaignSelector } from '@/components/painel/CampaignSelector';
+import type { ParticipationType } from '@/lib/supabase/types';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Divulgacam',
@@ -23,13 +26,18 @@ const TYPE_LABEL: Record<ParticipationType, string> = {
   lideranca: 'Lideranças',
 };
 
-export default async function PainelDashboard() {
-  const { manager } = await requireAuthSession();
-  const supabase = createSupabaseServerClient();
+interface PageProps {
+  searchParams: { campanha?: string };
+}
 
-  // If no campaign assigned, show a message
-  if (!manager.campaign_id) {
-    const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+export default async function PainelDashboard({ searchParams }: PageProps) {
+  const { manager } = await requireAuthSession();
+  const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+
+  const campaign = await getActiveCampaign(manager, searchParams);
+
+  // No campaign available
+  if (!campaign) {
     return (
       <main className="flex flex-1 items-center justify-center px-6 py-20">
         <div className="max-w-md text-center">
@@ -42,10 +50,9 @@ export default async function PainelDashboard() {
             Nenhuma campanha vinculada
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Sua conta ainda não está vinculada a uma campanha.
             {isAdmin
-              ? ' Acesse a aba Campanhas para criar ou gerenciar campanhas.'
-              : ' Aguarde um gestor vincular sua conta a uma campanha.'}
+              ? 'Acesse a aba Campanhas para criar ou gerenciar campanhas.'
+              : 'Aguarde um gestor vincular sua conta a uma campanha.'}
           </p>
           {isAdmin && (
             <Link
@@ -60,22 +67,10 @@ export default async function PainelDashboard() {
     );
   }
 
-  const { data: campaignData } = await supabase
-    .from('campaigns')
-    .select('*')
-    .eq('id', manager.campaign_id)
-    .maybeSingle();
-  const campaign = campaignData as Campaign | null;
+  const allCampaigns = isAdmin ? await getAllCampaigns() : [];
+  const admin = supabaseAdmin();
 
-  if (!campaign) {
-    return (
-      <main className="px-6 py-8 sm:px-10">
-        <p className="text-sm text-red-600">Campanha não encontrada.</p>
-      </main>
-    );
-  }
-
-  const { count: totalLeads } = await supabase
+  const { count: totalLeads } = await admin
     .from('leads')
     .select('id', { count: 'exact', head: true })
     .eq('campaign_id', campaign.id);
@@ -83,7 +78,7 @@ export default async function PainelDashboard() {
   const countByType = await Promise.all(
     (['apoiador', 'colaborador', 'lideranca'] as ParticipationType[]).map(
       async (type) => {
-        const { count } = await supabase
+        const { count } = await admin
           .from('leads')
           .select('id', { count: 'exact', head: true })
           .eq('campaign_id', campaign.id)
@@ -93,7 +88,7 @@ export default async function PainelDashboard() {
     )
   );
 
-  const { data: recentLeadsData } = await supabase
+  const { data: recentLeadsData } = await admin
     .from('leads')
     .select('id, name, whatsapp, participation_type, created_at')
     .eq('campaign_id', campaign.id)
@@ -110,6 +105,12 @@ export default async function PainelDashboard() {
           {campaign.candidate_name && ` · ${campaign.candidate_name}`}.
         </p>
       </header>
+
+      {isAdmin && (
+        <Suspense>
+          <CampaignSelector campaigns={allCampaigns} activeCampaignId={campaign.id} />
+        </Suspense>
+      )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Total de leads" value={totalLeads ?? 0} accent />

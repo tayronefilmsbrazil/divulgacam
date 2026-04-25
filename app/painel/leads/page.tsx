@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { requireManagerSession } from '@/lib/painel/session';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAuthSession } from '@/lib/painel/session';
+import { getActiveCampaign, getAllCampaigns } from '@/lib/painel/campaign-resolver';
+import { CampaignSelector } from '@/components/painel/CampaignSelector';
 import { LeadsFilter } from '@/components/painel/LeadsFilter';
 import { Pagination } from '@/components/painel/Pagination';
 import { DeleteLeadForm } from '@/components/painel/DeleteLeadForm';
@@ -32,12 +34,25 @@ interface PageProps {
     page?: string;
     tipo?: string;
     q?: string;
+    campanha?: string;
   };
 }
 
 export default async function LeadsPage({ searchParams }: PageProps) {
-  const { campaign } = await requireManagerSession();
-  const supabase = createSupabaseServerClient();
+  const { manager } = await requireAuthSession();
+  const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+
+  const campaign = await getActiveCampaign(manager, searchParams);
+  if (!campaign) {
+    return (
+      <main className="px-6 py-8 sm:px-10">
+        <p className="text-sm text-gray-500">Nenhuma campanha vinculada.</p>
+      </main>
+    );
+  }
+
+  const allCampaigns = isAdmin ? await getAllCampaigns() : [];
+  const admin = supabaseAdmin();
 
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10) || 1);
   const tipo =
@@ -49,7 +64,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
   const offset = (page - 1) * PER_PAGE;
 
-  let query = supabase
+  let query = admin
     .from('leads')
     .select('id, name, whatsapp, email, participation_type, created_at', {
       count: 'exact',
@@ -69,7 +84,6 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
   return (
     <main className="px-6 py-8 sm:px-10">
-      {/* Header */}
       <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-brand-dark">Leads</h1>
@@ -83,7 +97,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
                 )}
               </>
             ) : (
-              'Carregando…'
+              'Carregando...'
             )}
           </p>
         </div>
@@ -93,24 +107,28 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             href="/painel/leads/importar"
             className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-brand-primary hover:text-brand-primary"
           >
-            ↑ Importar
+            Importar
           </Link>
           <a
             href={exportUrl}
             download
             className="inline-flex items-center gap-2 rounded-md border border-brand-primary bg-white px-4 py-2 text-sm font-semibold text-brand-primary transition hover:bg-brand-primary hover:text-white"
           >
-            ↓ Exportar CSV
+            Exportar CSV
           </a>
         </div>
       </header>
 
-      {/* Filtros */}
+      {isAdmin && (
+        <Suspense>
+          <CampaignSelector campaigns={allCampaigns} activeCampaignId={campaign.id} />
+        </Suspense>
+      )}
+
       <Suspense>
         <LeadsFilter currentTipo={tipo} currentQ={q} />
       </Suspense>
 
-      {/* Tabela */}
       <div className="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         {leads.length === 0 ? (
           <p className="p-8 text-center text-sm text-gray-500">
@@ -174,7 +192,6 @@ export default async function LeadsPage({ searchParams }: PageProps) {
         )}
       </div>
 
-      {/* Paginação */}
       {totalPages > 1 && (
         <div className="mt-6">
           <Suspense>

@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { requireManagerSession } from '@/lib/painel/session';
+import { Suspense } from 'react';
+import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAuthSession } from '@/lib/painel/session';
+import { getActiveCampaign, getAllCampaigns } from '@/lib/painel/campaign-resolver';
+import { CampaignSelector } from '@/components/painel/CampaignSelector';
 import type { Blast, BlastChannel, BlastStatus } from '@/lib/supabase/types';
 
 export const metadata: Metadata = {
@@ -21,7 +24,7 @@ const STATUS_CONFIG: Record<
   { label: string; classes: string }
 > = {
   pending:   { label: 'Aguardando',  classes: 'bg-gray-100  text-gray-600'  },
-  sending:   { label: 'Enviando…',   classes: 'bg-blue-100  text-blue-700'  },
+  sending:   { label: 'Enviando...',  classes: 'bg-blue-100  text-blue-700'  },
   completed: { label: 'Concluído',   classes: 'bg-green-100 text-green-700' },
   failed:    { label: 'Falhou',      classes: 'bg-red-100   text-red-700'   },
 };
@@ -33,11 +36,27 @@ function formatDate(iso: string): string {
   });
 }
 
-export default async function HistoricoPage() {
-  const { campaign } = await requireManagerSession();
-  const supabase = createSupabaseServerClient();
+interface PageProps {
+  searchParams: { campanha?: string };
+}
 
-  const { data: blastsRaw } = await supabase
+export default async function HistoricoPage({ searchParams }: PageProps) {
+  const { manager } = await requireAuthSession();
+  const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+
+  const campaign = await getActiveCampaign(manager, searchParams);
+  if (!campaign) {
+    return (
+      <main className="px-6 py-8 sm:px-10">
+        <p className="text-sm text-gray-500">Nenhuma campanha vinculada.</p>
+      </main>
+    );
+  }
+
+  const allCampaigns = isAdmin ? await getAllCampaigns() : [];
+  const admin = supabaseAdmin();
+
+  const { data: blastsRaw } = await admin
     .from('blasts')
     .select(
       'id, channel, message, total_recipients, sent_count, failed_count, status, created_at, completed_at, filters',
@@ -58,6 +77,12 @@ export default async function HistoricoPage() {
             : `${blasts.length} ${blasts.length === 1 ? 'disparo' : 'disparos'} registrados.`}
         </p>
       </header>
+
+      {isAdmin && (
+        <Suspense>
+          <CampaignSelector campaigns={allCampaigns} activeCampaignId={campaign.id} />
+        </Suspense>
+      )}
 
       {blasts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-14 text-center">
@@ -140,10 +165,9 @@ export default async function HistoricoPage() {
         </div>
       )}
 
-      {/* Legenda para status "Enviando" */}
       {blasts.some((b) => b.status === 'sending') && (
         <p className="mt-4 text-xs text-gray-400">
-          ℹ️ Disparos com status <strong>Enviando…</strong> estão sendo processados pelo n8n.
+          Disparos com status <strong>Enviando...</strong> estão sendo processados pelo n8n.
           Atualize a página para ver o progresso.
         </p>
       )}
