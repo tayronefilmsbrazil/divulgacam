@@ -1,7 +1,6 @@
 import { Sidebar } from '@/components/painel/Sidebar';
 import { requireAuthSession } from '@/lib/painel/session';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { Campaign } from '@/lib/supabase/types';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export default async function PainelLayout({
   children,
@@ -13,13 +12,13 @@ export default async function PainelLayout({
   let campaignName: string | null = null;
 
   if (manager.campaign_id) {
-    const supabase = createSupabaseServerClient();
-    const { data: campaign } = await supabase
+    const admin = supabaseAdmin();
+    const { data: campaign } = await admin
       .from('campaigns')
       .select('name')
       .eq('id', manager.campaign_id)
       .maybeSingle();
-    campaignName = (campaign as Pick<Campaign, 'name'> | null)?.name ?? null;
+    campaignName = (campaign as { name: string } | null)?.name ?? null;
   }
 
   return (
