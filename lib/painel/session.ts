@@ -1,12 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 import type { Campaign, ManagerRole, ManagerStatus } from '@/lib/supabase/types';
-import type { Database } from '@/lib/supabase/database.types';
-
-type ManagerRow = Pick<
-  Database['public']['Tables']['managers']['Row'],
-  'id' | 'name' | 'email' | 'campaign_id' | 'role' | 'status'
->;
 
 export interface AuthSession {
   manager: {
@@ -30,7 +25,8 @@ export interface GestorSession extends AuthSession {
 
 /**
  * Returns the authenticated manager record, or redirects.
- * Does NOT require a campaign or approved status — use for layout-level checks.
+ * Uses admin client (service_role) for the managers lookup to bypass RLS
+ * — authentication is already verified via supabase.auth.getUser().
  */
 export async function requireAuthSession(): Promise<AuthSession> {
   const supabase = createSupabaseServerClient();
@@ -43,10 +39,11 @@ export async function requireAuthSession(): Promise<AuthSession> {
     redirect('/login');
   }
 
-  // Use select('*') to avoid PostgREST schema cache issues with new columns
-  const { data: managerRaw, error: managerError } = await supabase
+  // Use admin client to bypass RLS (auth already verified above)
+  const admin = supabaseAdmin();
+  const { data: managerRaw, error: managerError } = await admin
     .from('managers')
-    .select('*')
+    .select('id, name, email, campaign_id, role, status')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -59,10 +56,8 @@ export async function requireAuthSession(): Promise<AuthSession> {
     redirect('/login?erro=sem-conta');
   }
 
-  // Safe access with defaults for backwards compatibility
-  const manager = managerRaw as Record<string, unknown>;
-  const role = (manager.role as ManagerRole) ?? 'user';
-  const status = (manager.status as ManagerStatus) ?? 'approved';
+  const role = (managerRaw.role as ManagerRole) ?? 'user';
+  const status = (managerRaw.status as ManagerStatus) ?? 'approved';
 
   if (status === 'pending') {
     redirect('/aguardando');
@@ -75,10 +70,10 @@ export async function requireAuthSession(): Promise<AuthSession> {
 
   return {
     manager: {
-      id: manager.id as string,
-      name: (manager.name as string | null),
-      email: manager.email as string,
-      campaign_id: (manager.campaign_id as string | null),
+      id: managerRaw.id as string,
+      name: managerRaw.name as string | null,
+      email: managerRaw.email as string,
+      campaign_id: managerRaw.campaign_id as string | null,
       role,
       status,
     },
@@ -126,9 +121,4 @@ export async function requireGestorSession(): Promise<GestorSession> {
   return {
     manager: auth.manager as GestorSession['manager'],
   };
-}
-
-/** Check if current manager is the master (tayrone@tayronefilms.com) */
-export function isMaster(role: ManagerRole): boolean {
-  return role === 'master';
 }
