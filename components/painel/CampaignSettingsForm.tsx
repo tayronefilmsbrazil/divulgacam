@@ -4,7 +4,7 @@ import { useFormState, useFormStatus } from 'react-dom';
 import {
   updateCampaign,
   type SettingsActionState,
-} from '@/app/painel/configuracoes/actions';
+} from '@/app/painel/campanhas/actions';
 import type { Campaign } from '@/lib/supabase/types';
 
 const initial: SettingsActionState = { error: null, success: false };
@@ -17,7 +17,7 @@ function SubmitButton() {
       disabled={pending}
       className="rounded-md bg-brand-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? 'Salvando…' : 'Salvar alterações'}
+      {pending ? 'Salvando...' : 'Salvar alterações'}
     </button>
   );
 }
@@ -34,6 +34,8 @@ export function CampaignSettingsForm({ campaign }: Props) {
       action={action}
       className="space-y-5 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
     >
+      <input type="hidden" name="campaign_id" value={campaign.id} />
+
       {/* Nome da campanha */}
       <div>
         <label
@@ -112,7 +114,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
           className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Aparece no cabeçalho dos e-mails disparados. Use uma imagem PNG ou JPG hospedada publicamente.
+          Aparece no cabeçalho dos e-mails disparados.
         </p>
       </div>
 
@@ -138,7 +140,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
         </p>
       </div>
 
-      {/* Instância WhatsApp (Evolution API) */}
+      {/* Instância WhatsApp */}
       <div>
         <label
           htmlFor="whatsapp_instance"
@@ -156,7 +158,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
           className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Nome da instância configurada no Evolution API. Usado pelo n8n para enviar WhatsApp.
+          Nome da instância configurada no Evolution API.
         </p>
       </div>
 
@@ -178,11 +180,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
           className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Deixe em branco para usar o padrão definido na variável <code className="text-xs">RESEND_FROM_EMAIL</code>.
+          Deixe em branco para usar o padrão definido na variável RESEND_FROM_EMAIL.
         </p>
       </div>
 
-      {/* Informações somente-leitura */}
+      {/* Slug readonly */}
       <div className="rounded-md bg-gray-50 px-4 py-3">
         <p className="text-xs text-gray-500">
           <strong>Slug público:</strong>{' '}
@@ -201,7 +203,7 @@ export function CampaignSettingsForm({ campaign }: Props) {
       )}
       {state.success && (
         <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
-          ✓ Configurações salvas com sucesso.
+          Configurações salvas com sucesso.
         </div>
       )}
 

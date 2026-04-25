@@ -1,4 +1,4 @@
-import type { ParticipationType, BlastChannel, BlastStatus, BlastLogStatus } from './types';
+import type { ParticipationType, BlastChannel, BlastStatus, BlastLogStatus, ManagerRole, ManagerStatus } from './types';
 
 export interface Database {
   public: {
@@ -65,16 +65,20 @@ export interface Database {
       managers: {
         Row: {
           id: string;
-          campaign_id: string;
+          campaign_id: string | null;
           name: string | null;
           email: string;
+          role: ManagerRole;
+          status: ManagerStatus;
           created_at: string;
         };
         Insert: {
           id: string;
-          campaign_id: string;
+          campaign_id?: string | null;
           name?: string | null;
           email: string;
+          role?: ManagerRole;
+          status?: ManagerStatus;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['managers']['Insert']>;

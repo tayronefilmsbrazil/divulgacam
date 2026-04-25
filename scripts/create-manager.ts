@@ -110,6 +110,8 @@ async function main() {
     campaign_id: campaign.id,
     email: args.email,
     name: args.name ?? null,
+    role: 'user',
+    status: 'approved',
   });
 
   if (insertError) {

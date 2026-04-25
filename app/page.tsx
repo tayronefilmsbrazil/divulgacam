@@ -84,16 +84,14 @@ export default function HomePage() {
               href="/login"
               className="rounded-md bg-[#E84C22] px-8 py-3 text-base font-bold text-white shadow-lg transition hover:bg-[#c93d18]"
             >
-              Acessar meu painel →
+              Acessar meu painel
             </Link>
-            <a
-              href="https://wa.me/5582999999999"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-md border border-white/30 px-8 py-3 text-base font-semibold text-white transition hover:border-white hover:bg-white/10"
+            <Link
+              href="/cadastro"
+              className="rounded-md border border-[#E84C22] px-8 py-3 text-base font-semibold text-[#E84C22] transition hover:bg-[#E84C22] hover:text-white"
             >
-              Falar com a equipe
-            </a>
+              Criar conta
+            </Link>
           </div>
         </div>
       </section>

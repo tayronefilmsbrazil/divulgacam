@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { requireManagerSession } from '@/lib/painel/session';
-import type { ParticipationType } from '@/lib/supabase/types';
+import { requireAuthSession } from '@/lib/painel/session';
+import type { Campaign, ParticipationType } from '@/lib/supabase/types';
 
 export const metadata: Metadata = {
   title: 'Dashboard — Divulgacam',
@@ -24,8 +24,56 @@ const TYPE_LABEL: Record<ParticipationType, string> = {
 };
 
 export default async function PainelDashboard() {
-  const { campaign } = await requireManagerSession();
+  const { manager } = await requireAuthSession();
   const supabase = createSupabaseServerClient();
+
+  // If no campaign assigned, show a message
+  if (!manager.campaign_id) {
+    const isAdmin = manager.role === 'master' || manager.role === 'gestor';
+    return (
+      <main className="flex flex-1 items-center justify-center px-6 py-20">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+            <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-brand-dark">
+            Nenhuma campanha vinculada
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            Sua conta ainda não está vinculada a uma campanha.
+            {isAdmin
+              ? ' Acesse a aba Campanhas para criar ou gerenciar campanhas.'
+              : ' Aguarde um gestor vincular sua conta a uma campanha.'}
+          </p>
+          {isAdmin && (
+            <Link
+              href="/painel/campanhas"
+              className="mt-6 inline-flex items-center gap-2 rounded-md bg-brand-primary px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
+            >
+              Gerenciar campanhas
+            </Link>
+          )}
+        </div>
+      </main>
+    );
+  }
+
+  const { data: campaignData } = await supabase
+    .from('campaigns')
+    .select('*')
+    .eq('id', manager.campaign_id)
+    .maybeSingle();
+  const campaign = campaignData as Campaign | null;
+
+  if (!campaign) {
+    return (
+      <main className="px-6 py-8 sm:px-10">
+        <p className="text-sm text-red-600">Campanha não encontrada.</p>
+      </main>
+    );
+  }
 
   const { count: totalLeads } = await supabase
     .from('leads')
@@ -77,7 +125,7 @@ export default async function PainelDashboard() {
             href="/painel/leads"
             className="text-sm font-medium text-brand-primary hover:underline"
           >
-            Ver todos →
+            Ver todos
           </Link>
         </div>
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">

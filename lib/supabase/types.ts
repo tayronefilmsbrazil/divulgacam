@@ -2,6 +2,8 @@ export type ParticipationType = 'apoiador' | 'colaborador' | 'lideranca';
 export type BlastChannel     = 'whatsapp' | 'email' | 'both';
 export type BlastStatus      = 'pending' | 'sending' | 'completed' | 'failed';
 export type BlastLogStatus   = 'pending' | 'sent' | 'failed';
+export type ManagerRole      = 'master' | 'gestor' | 'user';
+export type ManagerStatus    = 'pending' | 'approved' | 'rejected';
 
 export interface Campaign {
   id: string;
@@ -40,6 +42,16 @@ export interface Blast {
   status: BlastStatus;
   created_at: string;
   completed_at: string | null;
+}
+
+export interface Manager {
+  id: string;
+  campaign_id: string | null;
+  name: string | null;
+  email: string;
+  role: ManagerRole;
+  status: ManagerStatus;
+  created_at: string;
 }
 
 export interface BlastLog {

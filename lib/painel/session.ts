@@ -1,29 +1,38 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import type { Campaign } from '@/lib/supabase/types';
+import type { Campaign, ManagerRole, ManagerStatus } from '@/lib/supabase/types';
 import type { Database } from '@/lib/supabase/database.types';
 
 type ManagerRow = Pick<
   Database['public']['Tables']['managers']['Row'],
-  'id' | 'name' | 'email' | 'campaign_id'
+  'id' | 'name' | 'email' | 'campaign_id' | 'role' | 'status'
 >;
 
-export interface PainelSession {
+export interface AuthSession {
   manager: {
     id: string;
     name: string | null;
     email: string;
-    campaign_id: string;
+    campaign_id: string | null;
+    role: ManagerRole;
+    status: ManagerStatus;
   };
+}
+
+export interface PainelSession extends AuthSession {
+  manager: AuthSession['manager'] & { campaign_id: string };
   campaign: Campaign;
 }
 
+export interface GestorSession extends AuthSession {
+  manager: AuthSession['manager'] & { role: 'master' | 'gestor' };
+}
+
 /**
- * Carrega a sessão completa do gestor logado para uso em Server Components
- * dentro de /painel. Redireciona para /login se não autenticado, ou /login?erro
- * se autenticado mas sem registro em managers.
+ * Returns the authenticated manager record, or redirects.
+ * Does NOT require a campaign or approved status — use for layout-level checks.
  */
-export async function requireManagerSession(): Promise<PainelSession> {
+export async function requireAuthSession(): Promise<AuthSession> {
   const supabase = createSupabaseServerClient();
 
   const {
@@ -36,25 +45,22 @@ export async function requireManagerSession(): Promise<PainelSession> {
 
   const { data: manager } = (await supabase
     .from('managers')
-    .select('id, name, email, campaign_id')
+    .select('id, name, email, campaign_id, role, status')
     .eq('id', user.id)
     .maybeSingle()) as unknown as { data: ManagerRow | null; error: unknown };
 
   if (!manager) {
-    // Usuário autenticado mas sem vínculo com campanha — deslogar e mandar login.
     await supabase.auth.signOut();
-    redirect('/login?erro=sem-campanha');
+    redirect('/login?erro=sem-conta');
   }
 
-  const { data: campaign } = await supabase
-    .from('campaigns')
-    .select('*')
-    .eq('id', manager.campaign_id)
-    .maybeSingle();
+  if (manager.status === 'pending') {
+    redirect('/aguardando');
+  }
 
-  if (!campaign) {
+  if (manager.status === 'rejected') {
     await supabase.auth.signOut();
-    redirect('/login?erro=campanha-removida');
+    redirect('/login?erro=rejeitado');
   }
 
   return {
@@ -63,7 +69,56 @@ export async function requireManagerSession(): Promise<PainelSession> {
       name: manager.name,
       email: manager.email,
       campaign_id: manager.campaign_id,
+      role: manager.role,
+      status: manager.status,
     },
+  };
+}
+
+/**
+ * Requires approved manager WITH a campaign assigned.
+ * Used for campaign-scoped pages (dashboard, leads, materiais, etc.)
+ */
+export async function requireManagerSession(): Promise<PainelSession> {
+  const auth = await requireAuthSession();
+
+  if (!auth.manager.campaign_id) {
+    redirect('/painel?sem-campanha=1');
+  }
+
+  const supabase = createSupabaseServerClient();
+  const { data: campaign } = await supabase
+    .from('campaigns')
+    .select('*')
+    .eq('id', auth.manager.campaign_id)
+    .maybeSingle();
+
+  if (!campaign) {
+    redirect('/painel?campanha-removida=1');
+  }
+
+  return {
+    manager: { ...auth.manager, campaign_id: auth.manager.campaign_id },
     campaign: campaign as Campaign,
   };
+}
+
+/**
+ * Requires gestor or master role. Used for admin pages (usuarios, campanhas).
+ */
+export async function requireGestorSession(): Promise<GestorSession> {
+  const auth = await requireAuthSession();
+
+  if (auth.manager.role !== 'master' && auth.manager.role !== 'gestor') {
+    redirect('/painel');
+  }
+
+  return {
+    manager: auth.manager as GestorSession['manager'],
+  };
+}
+
+/** Check if current manager is the master (tayrone@tayronefilms.com) */
+export function isMaster(role: ManagerRole): boolean {
+  return role === 'master';
 }
