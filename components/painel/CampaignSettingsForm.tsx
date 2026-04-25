@@ -118,13 +118,35 @@ export function CampaignSettingsForm({ campaign }: Props) {
         </p>
       </div>
 
-      {/* Webhook n8n */}
+      {/* Webhook boas-vindas */}
+      <div>
+        <label
+          htmlFor="n8n_lead_webhook_url"
+          className="mb-1 block text-sm font-semibold text-brand-dark"
+        >
+          Webhook boas-vindas (lead novo)
+        </label>
+        <input
+          id="n8n_lead_webhook_url"
+          type="url"
+          name="n8n_lead_webhook_url"
+          maxLength={500}
+          defaultValue={campaign.n8n_lead_webhook_url ?? ''}
+          placeholder="https://n8n.seudominio.com.br/webhook/..."
+          className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
+        />
+        <p className="mt-1 text-xs text-gray-500">
+          Chamado quando um novo lead se cadastra. Use para enviar áudio ou mensagem de boas-vindas via n8n.
+        </p>
+      </div>
+
+      {/* Webhook disparo de campanhas */}
       <div>
         <label
           htmlFor="n8n_webhook_url"
           className="mb-1 block text-sm font-semibold text-brand-dark"
         >
-          URL do webhook n8n
+          Webhook disparo de campanhas
         </label>
         <input
           id="n8n_webhook_url"
@@ -132,11 +154,11 @@ export function CampaignSettingsForm({ campaign }: Props) {
           name="n8n_webhook_url"
           maxLength={500}
           defaultValue={campaign.n8n_webhook_url ?? ''}
-          placeholder="https://n8n.seudominio.com.br/webhook/..."
+          placeholder="https://n8n.seudominio.com.br/webhook/disparo-whatsapp"
           className="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
         />
         <p className="mt-1 text-xs text-gray-500">
-          Endpoint que recebe os leads em tempo real via POST.
+          Usado ao disparar campanhas de WhatsApp em massa pelo painel.
         </p>
       </div>
 

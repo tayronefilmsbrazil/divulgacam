@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
-    .select('id, slug, n8n_webhook_url')
+    .select('id, slug, n8n_lead_webhook_url')
     .eq('id', campanha_id)
     .maybeSingle();
 
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (campaign.n8n_webhook_url) {
+  if (campaign.n8n_lead_webhook_url) {
     const payload = {
       nome,
       whatsapp,
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), N8N_TIMEOUT_MS);
     try {
-      const response = await fetch(campaign.n8n_webhook_url, {
+      const response = await fetch(campaign.n8n_lead_webhook_url!, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

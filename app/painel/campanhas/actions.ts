@@ -93,6 +93,8 @@ export async function updateCampaign(
     (formData.get('primary_color') as string | null)?.trim() || '#E84C22';
   const n8nWebhookUrl =
     (formData.get('n8n_webhook_url') as string | null)?.trim() || null;
+  const n8nLeadWebhookUrl =
+    (formData.get('n8n_lead_webhook_url') as string | null)?.trim() || null;
   const whatsappInstance =
     (formData.get('whatsapp_instance') as string | null)?.trim() || null;
   const emailFrom =
@@ -117,6 +119,7 @@ export async function updateCampaign(
     primary_color: primaryColor,
     logo_url: logoUrl,
     n8n_webhook_url: n8nWebhookUrl,
+    n8n_lead_webhook_url: n8nLeadWebhookUrl,
     whatsapp_instance: whatsappInstance,
     email_from: emailFrom,
   };

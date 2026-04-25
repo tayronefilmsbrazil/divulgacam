@@ -13,6 +13,7 @@ export interface Campaign {
   logo_url: string | null;
   primary_color: string;
   n8n_webhook_url: string | null;
+  n8n_lead_webhook_url: string | null;
   whatsapp_instance: string | null;
   email_from: string | null;
   created_at: string;
