@@ -43,38 +43,44 @@ export async function requireAuthSession(): Promise<AuthSession> {
     redirect('/login');
   }
 
-  const { data: manager, error: managerError } = (await supabase
+  // Use select('*') to avoid PostgREST schema cache issues with new columns
+  const { data: managerRaw, error: managerError } = await supabase
     .from('managers')
-    .select('id, name, email, campaign_id, role, status')
+    .select('*')
     .eq('id', user.id)
-    .maybeSingle()) as unknown as { data: ManagerRow | null; error: { message: string } | null };
+    .maybeSingle();
 
   if (managerError) {
     console.error('[session] erro ao buscar manager:', managerError.message);
   }
 
-  if (!manager) {
+  if (!managerRaw) {
     await supabase.auth.signOut();
     redirect('/login?erro=sem-conta');
   }
 
-  if (manager.status === 'pending') {
+  // Safe access with defaults for backwards compatibility
+  const manager = managerRaw as Record<string, unknown>;
+  const role = (manager.role as ManagerRole) ?? 'user';
+  const status = (manager.status as ManagerStatus) ?? 'approved';
+
+  if (status === 'pending') {
     redirect('/aguardando');
   }
 
-  if (manager.status === 'rejected') {
+  if (status === 'rejected') {
     await supabase.auth.signOut();
     redirect('/login?erro=rejeitado');
   }
 
   return {
     manager: {
-      id: manager.id,
-      name: manager.name,
-      email: manager.email,
-      campaign_id: manager.campaign_id,
-      role: manager.role,
-      status: manager.status,
+      id: manager.id as string,
+      name: (manager.name as string | null),
+      email: manager.email as string,
+      campaign_id: (manager.campaign_id as string | null),
+      role,
+      status,
     },
   };
 }
