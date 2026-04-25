@@ -43,11 +43,15 @@ export async function requireAuthSession(): Promise<AuthSession> {
     redirect('/login');
   }
 
-  const { data: manager } = (await supabase
+  const { data: manager, error: managerError } = (await supabase
     .from('managers')
     .select('id, name, email, campaign_id, role, status')
     .eq('id', user.id)
-    .maybeSingle()) as unknown as { data: ManagerRow | null; error: unknown };
+    .maybeSingle()) as unknown as { data: ManagerRow | null; error: { message: string } | null };
+
+  if (managerError) {
+    console.error('[session] erro ao buscar manager:', managerError.message);
+  }
 
   if (!manager) {
     await supabase.auth.signOut();
