@@ -49,6 +49,22 @@ export async function POST(req: Request) {
     );
   }
 
+  // Verifica duplicata pelo WhatsApp na mesma campanha
+  const { data: existing } = await supabase
+    .from('leads')
+    .select('id')
+    .eq('campaign_id', campaign.id)
+    .eq('whatsapp', whatsapp)
+    .maybeSingle();
+
+  if (existing) {
+    // Lead já existe — retorna sucesso sem duplicar
+    return NextResponse.json(
+      { success: true, leadId: existing.id, duplicate: true },
+      { status: 200 }
+    );
+  }
+
   const { data: insertedLead, error: insertError } = await supabase
     .from('leads')
     .insert({
