@@ -69,11 +69,11 @@ export default function HomePage() {
       <section className="bg-[#1A2740] px-6 pb-24 pt-20 text-center sm:px-12">
         <div className="mx-auto max-w-3xl">
           <span className="mb-4 inline-block rounded-full bg-[#E84C22]/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-[#E84C22]">
-            Plataforma para campanhas políticas
+            Plataforma para campanhas
           </span>
           <h1 className="mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
             Sua campanha organizada,<br />
-            <span className="text-[#E84C22]">seus apoiadores conectados.</span>
+            <span className="text-[#E84C22]">clientes e apoiadores conectados.</span>
           </h1>
           <p className="mt-6 text-lg text-gray-300">
             Capture leads, dispare WhatsApp e e-mail personalizados e gerencie
