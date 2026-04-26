@@ -72,8 +72,7 @@ export default function HomePage() {
             Plataforma para campanhas
           </span>
           <h1 className="mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
-            Sua campanha organizada,<br />
-            <span className="text-[#E84C22]">clientes e apoiadores conectados.</span>
+            Sua campanha organizada, <span className="text-[#E84C22]">clientes e apoiadores conectados.</span>
           </h1>
           <p className="mt-6 text-lg text-gray-300">
             Capture leads, dispare WhatsApp e e-mail personalizados e gerencie
