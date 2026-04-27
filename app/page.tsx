@@ -66,29 +66,29 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="bg-[#1A2740] px-6 pb-24 pt-20 text-center sm:px-12">
-        <div className="mx-auto max-w-3xl">
+      <section className="bg-[#1A2740] overflow-hidden px-6 pb-20 pt-16 text-center sm:px-12 sm:pb-24 sm:pt-20">
+        <div className="mx-auto max-w-3xl w-full">
           <span className="mb-4 inline-block rounded-full bg-[#E84C22]/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-[#E84C22]">
             Plataforma para campanhas
           </span>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight text-white sm:text-5xl">
+          <h1 className="mt-4 text-3xl font-extrabold leading-tight text-white sm:text-5xl">
             Sua campanha organizada,{' '}
-            <span className="text-[#E84C22] whitespace-nowrap">clientes e apoiadores conectados.</span>
+            <span className="text-[#E84C22]">clientes e apoiadores conectados.</span>
           </h1>
-          <p className="mt-6 text-lg text-gray-300">
+          <p className="mt-6 text-base text-gray-300 sm:text-lg">
             Capture leads, dispare WhatsApp e e-mail personalizados e gerencie
             todos os materiais da campanha em um só lugar.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:justify-center">
             <Link
               href="/login"
-              className="rounded-md bg-[#E84C22] px-8 py-3 text-base font-bold text-white shadow-lg transition hover:bg-[#c93d18]"
+              className="w-full rounded-md bg-[#E84C22] px-8 py-3 text-base font-bold text-white shadow-lg transition hover:bg-[#c93d18] sm:w-auto"
             >
               Acessar meu painel
             </Link>
             <Link
               href="/cadastro"
-              className="rounded-md border border-[#E84C22] px-8 py-3 text-base font-semibold text-[#E84C22] transition hover:bg-[#E84C22] hover:text-white"
+              className="w-full rounded-md border border-[#E84C22] px-8 py-3 text-base font-semibold text-[#E84C22] transition hover:bg-[#E84C22] hover:text-white sm:w-auto"
             >
               Criar conta
             </Link>
