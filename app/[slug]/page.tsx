@@ -69,7 +69,7 @@ export default async function CampaignLandingPage({ params }: PageProps) {
               {campaign.name}
             </p>
             <h1 className="text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Faça parte desta mudança
+              Quero participar
             </h1>
             <p className="text-lg text-white/80">
               Cadastre-se para receber conteúdos, atualizações e materiais
