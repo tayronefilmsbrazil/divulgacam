@@ -2,47 +2,54 @@
 import { cn } from '@/lib/utils';
 import React, { useEffect, useRef } from 'react';
 
-type DottedSurfaceProps = Omit<React.ComponentProps<'canvas'>, 'ref'>;
+type DottedSurfaceProps = Omit<React.ComponentProps<'div'>, 'ref'>;
 
 export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const el = containerRef.current;
+    if (!el) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const COLS = 28;
+    const ROWS = 16;
+    const DOT = 2.5;
 
-    const COLS = 24;
-    const ROWS = 14;
-    const DOT_RADIUS = 2;
+    // Cria canvas e cola no container
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'absolute';
+    canvas.style.inset = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    el.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d')!;
     let animId = 0;
     let tick = 0;
 
     const resize = () => {
-      canvas.width  = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const rect = el.getBoundingClientRect();
+      canvas.width  = rect.width  || window.innerWidth;
+      canvas.height = rect.height || 500;
     };
 
     const draw = () => {
-      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       const gapX = canvas.width  / (COLS + 1);
       const gapY = canvas.height / (ROWS + 1);
 
-      for (let col = 1; col <= COLS; col++) {
-        for (let row = 1; row <= ROWS; row++) {
+      for (let c = 1; c <= COLS; c++) {
+        for (let r = 1; r <= ROWS; r++) {
           const wave =
-            Math.sin((col + tick) * 0.4) * 0.5 +
-            Math.sin((row + tick) * 0.6) * 0.5;
+            Math.sin((c + tick) * 0.4) * 0.5 +
+            Math.sin((r + tick) * 0.6) * 0.5;
 
-          const alpha = 0.15 + Math.abs(wave) * 0.45;
-          const scale = 0.7 + Math.abs(wave) * 0.7;
+          const alpha = 0.12 + Math.abs(wave) * 0.5;
+          const radius = DOT * (0.6 + Math.abs(wave) * 0.8);
 
           ctx.beginPath();
-          ctx.arc(col * gapX, row * gapY, DOT_RADIUS * scale, 0, Math.PI * 2);
+          ctx.arc(c * gapX, r * gapY, radius, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(2)})`;
           ctx.fill();
         }
@@ -52,22 +59,26 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
       animId = requestAnimationFrame(draw);
     };
 
-    resize();
-    draw();
+    // Aguarda 1 frame para garantir que o layout está pronto
+    requestAnimationFrame(() => {
+      resize();
+      draw();
+    });
 
     const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    ro.observe(el);
 
     return () => {
       cancelAnimationFrame(animId);
       ro.disconnect();
+      if (canvas.parentNode === el) el.removeChild(canvas);
     };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className={cn('pointer-events-none absolute inset-0 h-full w-full', className)}
+    <div
+      ref={containerRef}
+      className={cn('pointer-events-none absolute inset-0', className)}
       {...props}
     />
   );
