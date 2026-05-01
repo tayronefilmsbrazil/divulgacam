@@ -127,14 +127,20 @@ class AnimationController {
   private readonly trailLength = 80;
   private readonly numberOfStars = 5000;
 
+  private w: number;
+  private h: number;
+
   constructor(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
-    size: number,
+    w: number,
+    h: number,
   ) {
     this.canvas = canvas;
     this.ctx = ctx;
-    this.size = size;
+    this.w = w;
+    this.h = h;
+    this.size = Math.max(w, h);
     this.timeline = gsap.timeline();
 
     // Seeded random for deterministic star placement
@@ -253,10 +259,11 @@ class AnimationController {
   private render() {
     const ctx = this.ctx;
     ctx.fillStyle = '#1A2740';
-    ctx.fillRect(0, 0, this.size, this.size);
+    ctx.fillRect(0, 0, this.w, this.h);
 
     ctx.save();
-    ctx.translate(this.size / 2, this.size / 2);
+    // Translate to the real container center so the spiral is perfectly centered
+    ctx.translate(this.w / 2, this.h / 2);
 
     const t1 = this.constrain(this.map(this.time, 0, this.changeEventTime + 0.25, 0, 1), 0, 1);
     const t2 = this.constrain(this.map(this.time, this.changeEventTime, 1, 0, 1), 0, 1);
@@ -287,16 +294,32 @@ type SpiralAnimationProps = {
 };
 
 export function SpiralAnimation({ className }: SpiralAnimationProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const controllerRef = useRef<AnimationController | null>(null);
   const [dims, setDims] = useState({ w: 0, h: 0 });
 
-  // Measure container size after mount
+  // Measure the real container so the spiral is always centered inside it
   useEffect(() => {
-    const update = () => setDims({ w: window.innerWidth, h: window.innerHeight });
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const w = rect.width  || el.offsetWidth  || 0;
+      const h = rect.height || el.offsetHeight || 0;
+      if (w && h) setDims({ w, h });
+    };
+
+    // 1 frame delay so layout is settled before measuring
+    const id = requestAnimationFrame(update);
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+
+    return () => {
+      cancelAnimationFrame(id);
+      ro.disconnect();
+    };
   }, []);
 
   // Spin up / tear down canvas animation
@@ -310,17 +333,17 @@ export function SpiralAnimation({ className }: SpiralAnimationProps) {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const size = Math.max(dims.w, dims.h);
 
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = `${dims.w}px`;
+    // Canvas exactly matches container — no more window-size mismatch
+    canvas.width  = dims.w * dpr;
+    canvas.height = dims.h * dpr;
+    canvas.style.width  = `${dims.w}px`;
     canvas.style.height = `${dims.h}px`;
     ctx.scale(dpr, dpr);
 
     // Destroy previous instance
     controllerRef.current?.destroy();
-    controllerRef.current = new AnimationController(canvas, ctx, size);
+    controllerRef.current = new AnimationController(canvas, ctx, dims.w, dims.h);
 
     return () => {
       controllerRef.current?.destroy();
@@ -329,7 +352,7 @@ export function SpiralAnimation({ className }: SpiralAnimationProps) {
   }, [dims]);
 
   return (
-    <div className={cn('pointer-events-none absolute inset-0', className)}>
+    <div ref={containerRef} className={cn('pointer-events-none absolute inset-0', className)}>
       <canvas ref={canvasRef} className="absolute inset-0" />
     </div>
   );
