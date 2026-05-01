@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LoginForm } from '@/components/LoginForm';
+import { BackgroundPaths } from '@/components/ui/background-paths';
 
 export const metadata: Metadata = {
   title: 'Entrar — Divulgacam',
@@ -21,8 +22,9 @@ export default function LoginPage({ searchParams }: PageProps) {
   const errorMsg = searchParams.erro ? ERRORS[searchParams.erro] : undefined;
 
   return (
-    <main className="flex min-h-screen flex-col bg-brand-dark">
-      <div className="flex flex-1 items-center justify-center px-6 py-12">
+    <main className="relative flex min-h-screen flex-col bg-brand-dark overflow-hidden">
+      <BackgroundPaths />
+      <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-white">
