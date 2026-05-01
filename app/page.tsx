@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SpiralAnimation } from '@/components/ui/spiral-animation';
 
 export const metadata: Metadata = {
   title: 'Divulgacam — Plataforma de Campanhas Políticas',
@@ -66,8 +67,9 @@ export default function HomePage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="bg-[#1A2740] overflow-hidden px-6 pb-20 pt-16 text-center sm:px-12 sm:pb-24 sm:pt-20">
-        <div className="mx-auto max-w-3xl w-full">
+      <section className="relative bg-[#1A2740] overflow-hidden px-6 pb-20 pt-16 text-center sm:px-12 sm:pb-24 sm:pt-20">
+        <SpiralAnimation className="opacity-50" />
+        <div className="relative z-10 mx-auto max-w-3xl w-full">
           <span className="mb-4 inline-block rounded-full bg-[#E84C22]/20 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-[#E84C22]">
             Plataforma para campanhas
           </span>
